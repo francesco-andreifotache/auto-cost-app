@@ -1,0 +1,16 @@
+# Ignoră fișierele compilate de Python
+__pycache__/
+*.py[cod]
+
+# Ignoră baza de date (nu vrem să urcăm datele userilor pe net)
+*.db
+*.sqlite3
+
+# Ignoră folderul cu librăriile instalate (venv)
+venv/
+env/
+.env
+
+# Ignoră setările specifice editorului tău
+.vscode/
+.idea/
