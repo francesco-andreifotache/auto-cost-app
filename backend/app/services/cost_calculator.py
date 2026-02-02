@@ -1,15 +1,18 @@
 from app.models import CarInput
 from app.core.constants import FUEL_CONSUMPTION
 from app.services.income_recommender import recommend_income
+from app.services.fuel_price_service import get_fuel_price
 
 def calculate_costs(car: CarInput) -> dict:
+    fuel_price = get_fuel_price(car.fuel_type)
+
     fuel_data = FUEL_CONSUMPTION[car.fuel_type]
 
     annual_distance = car.km_per_year
     consumption = fuel_data["consumption_per_100km"]
 
     annual_energy_used = (annual_distance / 100) * consumption
-    annual_fuel_cost = annual_energy_used * car.fuel_price
+    annual_fuel_cost = annual_energy_used * fuel_price
 
     monthly_fuel_cost = annual_fuel_cost / 12
 

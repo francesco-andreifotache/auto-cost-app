@@ -11,6 +11,7 @@ from app.database.user import User
 from app.core.security import hash_password, verify_password, create_access_token
 from app.models import UserCreate, UserLogin
 from app.db_models.car_cost import CarCost
+from app.utils.cost_calculator import calculate_annual_cost
 
 router = APIRouter()
 

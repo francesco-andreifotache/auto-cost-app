@@ -10,7 +10,8 @@ class CarInput(BaseModel):
 
     year: int = Field(..., ge=1980, le=2026)
     km_per_year: int = Field(..., ge=0)
-    fuel_price: float = Field(..., ge=0)
+    total_km: int = Field(..., ge=0)
+    # fuel_price: float = Field(..., ge=0) 
     insurance_cost: float = Field(..., ge=0)
     tax_cost: float = Field(..., ge=0)
     repair_risk_factor: float = Field(1, ge=0.5, le=2.0)
