@@ -1,37 +1,51 @@
-from app.models import CarInput
-from app.core.constants import FUEL_CONSUMPTION
-from app.services.income_recommender import recommend_income
+from app.schemas import CarInput
 from app.services.fuel_price_service import get_fuel_price
+from app.services.insurance_service import estimate_rca
+from app.services.income_recommender import recommend_income # <--- Importam functia ta
+from datetime import datetime
 
-def calculate_costs(car: CarInput) -> dict:
-    fuel_price = get_fuel_price(car.fuel_type)
+PREMIUM_BRANDS = ["bmw", "mercedes", "audi", "porsche", "lexus", "land rover", "jaguar", "volvo"]
 
-    fuel_data = FUEL_CONSUMPTION[car.fuel_type]
+def _calculate_risk_factor(brand: str, year: int, km_per_year: int) -> float:
+    factor = 1.0
+    current_year = datetime.now().year
+    car_age = current_year - year
 
-    annual_distance = car.km_per_year
-    consumption = fuel_data["consumption_per_100km"]
+    if brand.lower() in PREMIUM_BRANDS: factor += 0.5
+    
+    if car_age > 10: factor += 0.4
+    elif car_age > 5: factor += 0.2
 
-    annual_energy_used = (annual_distance / 100) * consumption
-    annual_fuel_cost = annual_energy_used * fuel_price
+    if km_per_year > 25000: factor += 0.3
+    elif km_per_year > 15000: factor += 0.1
 
-    monthly_fuel_cost = annual_fuel_cost / 12
+    return round(factor, 2)
 
-    monthly_fixed_costs = car.insurance_cost + car.tax_cost
+def calculate_costs(car_data: CarInput) -> dict:
+    # 1. Calcule Standard
+    fuel_price = get_fuel_price(car_data.fuel_type)
+    liters_needed = (car_data.km_per_year / 100) * car_data.fuel_consumption
+    annual_fuel_cost = liters_needed * fuel_price
 
-    repair_cost = monthly_fixed_costs * (car.repair_risk_factor - 1)
+    insurance_cost = estimate_rca(car_data.engine_capacity, car_data.driver_age)
 
-    total_monthly_cost = monthly_fuel_cost + monthly_fixed_costs + repair_cost
+    risk_factor = _calculate_risk_factor(car_data.brand, car_data.year, car_data.km_per_year)
+    base_maintenance = 1200 
+    maintenance_cost = base_maintenance * risk_factor
 
-    income_recommendation = recommend_income(total_monthly_cost)
+    total_annual_cost = annual_fuel_cost + insurance_cost + maintenance_cost
+
+    # 2. Integrarea functiei tale pentru Venit
+    monthly_cost = total_annual_cost / 12
+    
+    # Aici apelam functia ta exact cum ai scris-o
+    income_data = recommend_income(monthly_cost)
 
     return {
-        "costs": {
-            "fuel_type": car.fuel_type,
-            "monthly_fuel_cost": round(monthly_fuel_cost, 2),
-            "monthly_fixed_costs": round(monthly_fixed_costs, 2),
-            "repair_risk_adjustment": round(repair_cost, 2),
-            "total_monthly_cost": round(total_monthly_cost, 2),
-            "currency": "RON"
-        },
-        "income_recommendation": income_recommendation
+        "annual_fuel_cost": round(annual_fuel_cost, 2),
+        "insurance_cost": round(insurance_cost, 2),
+        "maintenance_cost": round(maintenance_cost, 2),
+        "total_annual_cost": round(total_annual_cost, 2),
+        "repair_risk_factor": risk_factor,
+        "income_analysis": income_data # Trimitem tot obiectul complex mai departe
     }
